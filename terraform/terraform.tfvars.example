@@ -1,0 +1,11 @@
+# Copy this file to terraform.tfvars (gitignored) for local applies.
+# Example project: project-15d206fe-12aa-4854-8f0
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+environment = "qa"
+
+# Initial deploy: public sample. Production: your image in Artifact Registry.
+container_image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+# Prefer passing at apply time: TF_VAR_mongo_connection_string (or -var) so it is not committed.
+mongo_connection_string = "mongodb://..."
