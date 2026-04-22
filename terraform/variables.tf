@@ -47,8 +47,8 @@ variable "cloud_run_cpu" {
 
 variable "cloud_run_memory" {
   type        = string
-  default     = "512Mi"
-  description = "Memory for Cloud Run."
+  default     = "1Gi"
+  description = "Memory for Cloud Run (1Gi+ recommended when Vertex AI agent is enabled)."
 }
 
 variable "connector_cidr" {
@@ -67,4 +67,34 @@ variable "mongo_connection_string" {
   type        = string
   sensitive   = true
   description = "Full MongoDB connection URI for the app. First version in Secret Manager; replace placeholder before prod."
+}
+
+variable "enable_cloud_nat" {
+  type        = bool
+  default     = true
+  description = "Cloud Router + NAT so outbound traffic from Cloud Run (ALL_TRAFFIC via connector) uses Google NAT IPs — use for MongoDB Atlas IP allowlists. Extra cost; set false for minimal spend."
+}
+
+variable "enable_uptime_check" {
+  type        = bool
+  default     = true
+  description = "Cloud Monitoring HTTPS uptime check against /actuator/health (requires public Cloud Run URL)."
+}
+
+variable "cloud_run_concurrency" {
+  type        = number
+  default     = 80
+  description = "Max concurrent requests per instance (typical 80–160 for APIs)."
+}
+
+variable "cloud_run_timeout_seconds" {
+  type        = number
+  default     = 300
+  description = "Request timeout for the service (seconds)."
+}
+
+variable "vertex_model" {
+  type        = string
+  default     = "gemini-1.5-flash"
+  description = "Preferred Vertex model id; app also tries built-in fallbacks. Use Model Garden if 404."
 }

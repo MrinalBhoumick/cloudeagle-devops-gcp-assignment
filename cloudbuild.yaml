@@ -1,0 +1,22 @@
+# Cloud Build: build & push sync-service to Artifact Registry
+#   gcloud builds submit --config=cloudbuild.yaml --project=YOUR_PROJECT
+substitutions:
+  _REGION: us-central1
+  _REPO: sync-service
+  _IMG: sync-service
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMG}:$SHORT_SHA"
+      - -t
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMG}:latest"
+      - -f
+      - app/Dockerfile
+      - app
+images:
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMG}:$SHORT_SHA"
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMG}:latest"
+options:
+  logging: CLOUD_LOGGING_ONLY

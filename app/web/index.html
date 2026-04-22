@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="sync-service — smart assistant on Google Cloud Run. Ask anything, safely."
+    />
+    <title>sync-service</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#chat">Skip to chat</a>
+    <div class="bg-aurora" aria-hidden="true"></div>
+    <div class="grid-noise" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <h1>sync-service</h1>
+          <p>Fast, friendly answers — running on Google Cloud Run</p>
+        </div>
+        <nav class="nav-pills" aria-label="Service status">
+          <span class="pill" id="pill-env"><strong>—</strong> env</span>
+          <span class="pill warn" id="pill-vertex"><strong>LLM</strong> —</span>
+          <span class="pill" id="pill-session"><strong>—</strong> session</span>
+          <a class="pill pill-link" href="/docs" target="_blank" rel="noopener">API</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero hero--compact" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <h2 id="hero-title">What can I help you with?</h2>
+        <p class="hero-lead">
+          General questions, ideas, and tech topics — in one place. This is a public URL: never paste passwords or
+          private data.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-secondary" href="/actuator/health">Health</a>
+          <a class="btn btn-secondary" href="/api/v1/summary">JSON summary</a>
+        </div>
+        <p class="public-banner" role="status">Demo service — use for non-sensitive content only.</p>
+      </div>
+    </section>
+
+    <main class="layout layout--focus">
+      <section class="chat-panel" id="chat" aria-labelledby="chat-heading">
+        <h2 id="chat-heading">Chat</h2>
+        <div id="chat-log" class="chat-log" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <form id="chat-form" class="input-row" autocomplete="off">
+          <label for="message" class="visually-hidden">Message</label>
+          <textarea
+            id="message"
+            name="message"
+            rows="2"
+            placeholder="Type a message…"
+            required
+          ></textarea>
+          <button type="submit" id="send">Send</button>
+        </form>
+        <p id="chat-error" role="alert"></p>
+        <div class="suggestions" role="group" aria-label="Try asking">
+          <button type="button" class="chip" data-ask="Give me three fun weekend ideas.">Weekend</button>
+          <button type="button" class="chip" data-ask="Explain what an API is in two sentences.">API</button>
+          <button type="button" class="chip" data-ask="How do I stay productive when working from home?">Focus</button>
+          <button type="button" class="chip" data-ask="What is the difference between SQL and NoSQL, briefly?">Data</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <a href="/ready">/ready</a> ·
+        <a href="/actuator/health">/actuator/health</a> ·
+        <a href="/api/v1/info">/api/v1/info</a> ·
+        sync-service
+      </p>
+    </footer>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

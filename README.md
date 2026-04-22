@@ -2,6 +2,8 @@
 
 This repository is the **technical assignment** deliverable: **Part 1** (CI/CD design + `Jenkinsfile`) and **Part 2** (infrastructure as code + design notes).
 
+**Public repository (branch `main`):** [github.com/MrinalBhoumick/cloudeagle-devops-gcp-assignment](https://github.com/MrinalBhoumick/cloudeagle-devops-gcp-assignment)
+
 ## What’s here
 
 | Item | Path |
@@ -9,7 +11,20 @@ This repository is the **technical assignment** deliverable: **Part 1** (CI/CD d
 | CI/CD design (branching, Jenkins, config, deploy strategy) | [docs/CI_CD_DESIGN.md](docs/CI_CD_DESIGN.md) |
 | Jenkins pipeline | [Jenkinsfile](Jenkinsfile) |
 | Infra + architecture (Mermaid) | [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) |
-| Terraform (VPC, connector, GAR, Secret Manager, Cloud Run) | [terraform/](terraform/) |
+| Terraform (VPC, NAT, monitoring, GAR, Secret Manager, Cloud Run) | [terraform/](terraform/) |
+| Sample **sync-service** + **web UI** at `/` + **agentic DevOps coach** (FastAPI, Vertex AI, MongoDB or in-memory) | [app/](app/) (see `app/web/`) |
+| **Cloud Build** (optional image build) | [cloudbuild.yaml](cloudbuild.yaml) |
+
+### Official brief vs this repo (coverage)
+
+| CloudEagle requirement | Where it is addressed |
+|------------------------|------------------------|
+| **Part 1 — Branching & env mapping, accidental prod, Jenkins stages, PR vs merge, rollback, env config, secrets, deploy strategy (blue/green etc.)** | [docs/CI_CD_DESIGN.md](docs/CI_CD_DESIGN.md) + [Jenkinsfile](Jenkinsfile) |
+| **Part 1 — Deliverable: design doc + Jenkinsfile** | Same files |
+| **Part 2 — Compute choice, MongoDB, VPC/ingress, secrets/IAM, logging & monitoring, cost/startup** | [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) + [terraform/](terraform/) |
+| **Part 2 — Architecture diagram + written explanation** | Mermaid in `docs/INFRASTRUCTURE.md` |
+| **Scenario note (Spring on GCE vs this sample)** | Explained in `docs/CI_CD_DESIGN.md` and `docs/INFRASTRUCTURE.md` — same operational story (build, health, config, deploy) on **Cloud Run** for lower ops cost. |
+| **Public access (anyone with the URL)** | Cloud Run is configured for unauthenticated `GET`/`POST` to the service URL (invoker: `allUsers` in Terraform) — see infra doc; treat as a **demo** and restrict IAM for real workloads. |
 
 ## Your GCP project (pre-filled for local use)
 
@@ -49,3 +64,4 @@ This repository is the **technical assignment** deliverable: **Part 1** (CI/CD d
 
 8. When your first **real** image exists in **Artifact Registry**, set `container_image` in your local `terraform.tfvars` to that image tag/digest and run `terraform apply` again.
 
+**If `terraform plan` fails with “No credentials loaded”:** run `gcloud auth application-default login` in the same terminal, then run `terraform plan` again. Terraform uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials); `gcloud auth login` alone is not enough for the Google provider unless you also set ADC.

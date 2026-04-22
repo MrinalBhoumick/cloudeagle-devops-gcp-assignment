@@ -109,3 +109,9 @@ A reference implementation is in the repository root: [`Jenkinsfile`](../Jenkins
 - [x] `Jenkinsfile` in the repository root (declarative pipeline, parameterized, branch-aware)  
 
 *Adjust branch names, credential IDs, and Cloud Run service names to match your org before running in production Jenkins.*
+
+---
+
+## Optional: agentic “DevOps coach” in the same service
+
+The reference implementation may ship a small **API + Vertex AI (Gemini)** step that answers questions *only* using embedded assignment text (`recruiter` rubric) plus optional **MongoDB** session history. It uses the same container image, **Secret Manager** for `MONGODB_URI`, and **Terraform-granted** `roles/aiplatform.user` for the Cloud Run service account. In Jenkins, the **same** build/push pipeline applies; add integration tests for `POST /api/v1/agent/chat` in non-prod if you enable the agent in production.

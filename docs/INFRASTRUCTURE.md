@@ -4,6 +4,8 @@
 
 This proposal runs **sync-service** on **Cloud Run** (autoscaling, low ops overhead), places it in a **custom VPC** for network control, uses **Google Secret Manager** for credentials, **Cloud IAM** for least-privilege access, and **MongoDB Atlas** (or self-managed MongoDB on GCE) for data — with **Cloud Logging / Cloud Monitoring** as the primary observability stack. Infrastructure as code lives under [`terraform/`](../terraform/).
 
+**Advanced pieces (in repo Terraform):** **Cloud Router + Cloud NAT** (optional) so traffic leaving Cloud Run through the **Serverless VPC Access** connector can use **predictable outbound IP addresses** (useful for **MongoDB Atlas** IP allowlists when egress is set to *all traffic* through the VPC). **Uptime checks** in Cloud Monitoring call **`/actuator/health` over HTTPS** on the public Cloud Run URL. A **sample `sync-service` API** in [`app/`](../app/) (FastAPI) exposes **`/actuator/health`**, **`/ready`**, and **`/api/v1/info`**; build and push the image to Artifact Registry, then set `container_image` to deploy it instead of the public sample.
+
 ---
 
 ## Architecture diagram
@@ -17,6 +19,7 @@ flowchart TB
   subgraph gcp [GCP project]
     LB[HTTPS / Cloud Run URL]
     CR[Cloud Run sync-service]
+    VAI[Vertex AI Gemini — agent]
     SM[Secret Manager]
     GAR[Artifact Registry]
     VPC[VPC - private subnet]
@@ -30,6 +33,7 @@ flowchart TB
 
   U -->|TLS| LB
   LB --> CR
+  CR -->|IAM: aiplatform.user| VAI
   CR --> CO
   CO --> VPC
   CR -->|runtime secrets| SM
