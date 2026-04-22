@@ -48,7 +48,13 @@ _GEMINI_API_MODELS: list[str] = [
     "gemini-1.5-flash-002",
     "gemini-1.5-pro",
     "gemini-1.5-pro-latest",
+    "gemini-pro",
+    "gemini-1.0-pro",
 ]
+
+# Filled on first `list_models()` call (per process); avoids hard‑coding names that 404 for some keys.
+_GEMINI_LIST_CACHE: list[str] | None = None
+_GEMINI_LIST_LOCK = threading.Lock()
 
 
 def _candidates_vertex() -> list[str]:
@@ -116,33 +122,87 @@ def _extract_genai_text(out: object) -> str:
         fr = getattr(cand, "finish_reason", None)
         if not text and fr is not None:
             logger.warning("genai finish_reason=%s (no text)", fr)
+    pfb = getattr(out, "prompt_feedback", None)
+    if pfb and getattr(pfb, "block_reason", None) and not text:
+        logger.warning("genai prompt_feedback.block_reason=%s", pfb.block_reason)
     return (text or "").strip()
 
 
-def _generate_gemini_api_key(user_prompt: str) -> Optional[str]:
+def _discover_api_model_names() -> list[str]:
+    global _GEMINI_LIST_CACHE
+    with _GEMINI_LIST_LOCK:
+        if _GEMINI_LIST_CACHE is not None:
+            return _GEMINI_LIST_CACHE
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not key:
+        return list(_GEMINI_API_MODELS)
+    names: list[str] = []
+    try:
+        import google.generativeai as genai
+
+        genai.configure(api_key=key)
+        for m in genai.list_models():
+            if "generateContent" not in (m.supported_generation_methods or []):
+                continue
+            n = m.name or ""
+            if n.startswith("models/"):
+                n = n[7:]
+            if n and n not in names:
+                names.append(n)
+        flash = [x for x in names if "flash" in x.lower()]
+        pro = [x for x in names if "pro" in x.lower() and x not in flash]
+        rest = [x for x in names if x not in flash and x not in pro]
+        ordered = flash + pro + rest
+        if not ordered:
+            ordered = list(_GEMINI_API_MODELS)
+    except Exception as e:
+        logger.warning("genai list_models: %s", e)
+        ordered = list(_GEMINI_API_MODELS)
+    with _GEMINI_LIST_LOCK:
+        _GEMINI_LIST_CACHE = ordered[:32]
+    return _GEMINI_LIST_CACHE
+
+
+def _ordered_gemini_models() -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for m in _discover_api_model_names() + _GEMINI_API_MODELS:
+        if m and m not in seen:
+            seen.add(m)
+            out.append(m)
+    return out
+
+
+def _generate_gemini_api_key(user_prompt: str) -> tuple[Optional[str], str]:
     global _last_backend, _last_model_label
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
-        return None
+        return None, "no_key"
     try:
         import google.generativeai as genai
     except ImportError:
-        return None
+        return None, "google-generativeai not installed"
     genai.configure(api_key=key)
     full = f"{_SYSTEM}\n\n{user_prompt}"
-    for name in _GEMINI_API_MODELS:
+    last_err = ""
+    try:
+        gen_cfg = genai.GenerationConfig(temperature=0.5, max_output_tokens=2048)
+    except Exception:
+        gen_cfg = None
+    for name in _ordered_gemini_models():
         try:
             m = genai.GenerativeModel(name)
-            out = m.generate_content(full)
+            out = m.generate_content(full, generation_config=gen_cfg) if gen_cfg is not None else m.generate_content(full)
             text = _extract_genai_text(out)
             if text:
                 _last_backend = "gemini_api_key"
                 _last_model_label = name
-                return text
+                return text, "ok"
         except Exception as e:
-            logger.warning("gemini API model %s: %s", name, e)
+            last_err = f"{name}: {str(e)[:180]}"
+            logger.warning("gemini API %s", last_err)
             continue
-    return None
+    return None, last_err or "all_models_failed"
 
 
 def _friendly_error(msg: str) -> str:
@@ -169,15 +229,20 @@ def _llm_unavailable_text(v_stat: str) -> str:
     return v_stat or "LLM unavailable. Set GEMINI_API_KEY or a working Vertex model."
 
 
-def _after_gemini_failed_vertex_failed(v_stat: str) -> str:
-    """Clear copy when API key path failed all models, then Vertex also failed."""
-    lead = (
-        "Gemini API (Generative Language) did not return text from any model tried. "
-        "Enable `generativelanguage.googleapis.com` on this GCP project, confirm the key at "
-        "https://aistudio.google.com/apikey , and check quota/billing.\n\n"
-        "Vertex fallback also did not succeed:\n"
-    )
-    return lead + _llm_unavailable_text(v_stat)
+def _gemini_key_only_error(detail: str) -> str:
+    """GEMINI_API_KEY is set: we use only the Generative Language API (no Vertex noise)."""
+    parts = [
+        "Gemini API (Generative Language) did not return usable text from this key.",
+        "Cloud Run calls Google **server-to-server** — in GCP → APIs & Services → Credentials → your API key:",
+        "• **Application restrictions:** set to “None” (or IP), NOT “HTTP referrers” (that blocks Cloud Run).",
+        "• **API restrictions:** allow **Generative Language API** (or “Don’t restrict” for a dev key).",
+        "Also: enable `generativelanguage.googleapis.com`, link billing, use a key **created in this GCP project** if possible.",
+    ]
+    if detail and detail not in ("no_key", "ok", "all_models_failed"):
+        parts.append(f"Technical detail: {detail}")
+    elif detail in ("all_models_failed",) or not detail:
+        parts.append("All models in the list were tried; see detail above or Cloud Run logs.")
+    return "\n".join(parts)
 
 
 def _build_prompt(history_lines: str, message: str, assignment_mode: bool) -> str:
@@ -216,18 +281,18 @@ async def run_agent_turn(
 
     r: str
     if os.getenv("GEMINI_API_KEY", "").strip():
-        g = await asyncio.to_thread(_generate_gemini_api_key, user_prompt)
+        g, g_err = await asyncio.to_thread(_generate_gemini_api_key, user_prompt)
         if g is not None:
             r = g
         else:
-            v_reply, v_stat = _generate_vertex(user_prompt)
-            r = v_reply if v_reply is not None else _after_gemini_failed_vertex_failed(v_stat)
+            # Key present: do not call Vertex (avoids duplicate Vertex 404 messages).
+            r = _gemini_key_only_error(g_err)
     else:
         v_reply, v_stat = _generate_vertex(user_prompt)
         if v_reply is not None:
             r = v_reply
         else:
-            g = await asyncio.to_thread(_generate_gemini_api_key, user_prompt)
+            g, g_err = await asyncio.to_thread(_generate_gemini_api_key, user_prompt)
             r = g if g is not None else _llm_unavailable_text(v_stat)
 
     await store.append_message(sid, "user", message)

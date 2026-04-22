@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from chat_store import get_store, set_store
 from vertex_agent import agent_meta, run_agent_turn
 
-APP_VERSION = "0.5.2"
+APP_VERSION = "0.5.4"
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
 ASSETS_DIR = WEB_DIR / "static"
