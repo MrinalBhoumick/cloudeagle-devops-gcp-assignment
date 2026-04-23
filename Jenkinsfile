@@ -92,7 +92,17 @@ pipeline {
         }
       }
       steps {
-        sh "docker build -t ${env.DOCKER_IMAGE}:${env.GIT_SHA_SHORT} -t ${env.DOCKER_IMAGE}:build-${env.BUILD_NUMBER} ."
+        script {
+          if (fileExists('sync-service-spring/pom.xml')) {
+            env.DOCKERFILE_DIR = 'sync-service-spring'
+          } else if (fileExists('app/Dockerfile')) {
+            env.DOCKERFILE_DIR = 'app'
+          } else {
+            env.DOCKERFILE_DIR = '.'
+            echo 'No sync-service-spring/ or app/Dockerfile — build context is repo root (ensure Dockerfile exists).'
+          }
+        }
+        sh "docker build -f ${env.DOCKERFILE_DIR}/Dockerfile -t ${env.DOCKER_IMAGE}:${env.GIT_SHA_SHORT} -t ${env.DOCKER_IMAGE}:build-${env.BUILD_NUMBER} ${env.DOCKERFILE_DIR}"
       }
     }
 

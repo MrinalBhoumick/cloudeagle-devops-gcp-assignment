@@ -1,0 +1,8 @@
+# QA — env-specific tuning (low replicas in K8s, relaxed JVM flags in CD)
+sync:
+  service:
+    version: "1.0.0-qa+${GIT_COMMIT:local}"
+
+logging:
+  level:
+    com.cloudeagle: INFO

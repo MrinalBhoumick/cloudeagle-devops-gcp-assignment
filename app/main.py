@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from chat_store import get_store, set_store
 from vertex_agent import agent_meta, run_agent_turn
 
-APP_VERSION = "0.5.4"
+APP_VERSION = "0.6.0"
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
 ASSETS_DIR = WEB_DIR / "static"
@@ -37,6 +37,18 @@ app = FastAPI(
     version=APP_VERSION,
     lifespan=lifespan,
 )
+
+# Browsers often cache /assets/* aggressively; keep responses easy to revalidate after deploys.
+_ASSET_MAX_AGE = 120
+
+
+@app.middleware("http")
+async def cache_headers_for_static_assets(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/assets/") and response.status_code < 400:
+        response.headers["Cache-Control"] = f"public, max-age={_ASSET_MAX_AGE}, must-revalidate"
+    return response
 
 
 def _env() -> str:
@@ -64,7 +76,10 @@ def home():
             },
             status_code=404,
         )
-    return FileResponse(index)
+    return FileResponse(
+        index,
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 @app.get("/api/v1/summary", tags=["api"])

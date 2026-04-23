@@ -75,6 +75,18 @@ variable "enable_cloud_nat" {
   description = "Cloud Router + NAT so outbound traffic from Cloud Run (ALL_TRAFFIC via connector) uses Google NAT IPs — use for MongoDB Atlas IP allowlists. Extra cost; set false for minimal spend."
 }
 
+variable "enable_gke" {
+  type        = bool
+  default     = false
+  description = "When true, create a regional GKE Autopilot cluster (Spring + kubectl deploy; extra cost)."
+}
+
+variable "gke_name" {
+  type        = string
+  default     = "sync-service-gke"
+  description = "GKE Autopilot cluster name (only when enable_gke = true)."
+}
+
 variable "enable_uptime_check" {
   type        = bool
   default     = true

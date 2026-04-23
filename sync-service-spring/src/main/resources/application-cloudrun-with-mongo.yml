@@ -1,0 +1,10 @@
+# Use with profile group `cloudrun-mongo` + MONGODB_URI (Atlas, etc.).
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+
+management:
+  health:
+    mongo:
+      enabled: true

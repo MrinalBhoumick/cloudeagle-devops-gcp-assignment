@@ -1,0 +1,37 @@
+# Default — overridden per profile: qa, staging, prod
+spring:
+  application:
+    name: sync-service
+  profiles:
+    group:
+      # Cloud Run: in-memory items unless you switch to `cloudrun-mongo` and set MONGODB_URI (Atlas, etc.)
+      cloudrun: "cloudrun-common,cloudrun-no-mongo"
+      cloudrun-mongo: "cloudrun-common,cloudrun-with-mongo"
+  data:
+    mongodb:
+      # Set MONGODB_URI or use profile `local` (see application-local.yml) for a local mongod
+      uri: ${MONGODB_URI:}
+
+server:
+  port: ${PORT:8080}
+
+sync:
+  service:
+    name: sync-service
+    version: "1.5.4"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    defaults:
+      enabled: true
+    mongo:
+      enabled: true

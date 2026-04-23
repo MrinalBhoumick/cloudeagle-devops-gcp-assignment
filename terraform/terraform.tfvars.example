@@ -10,6 +10,8 @@ container_image = "us-docker.pkg.dev/cloudrun/container/hello"
 # Prefer passing at apply time: TF_VAR_mongo_connection_string (or -var) so it is not committed.
 mongo_connection_string = "mongodb://..."
 
-# Optional (defaults in variables.tf): Cloud NAT + uptime check
+# Optional (defaults in variables.tf): Cloud NAT + uptime check + GKE Autopilot
 # enable_cloud_nat     = true
 # enable_uptime_check  = true
+# enable_gke           = false
+# gke_name             = "sync-service-gke"

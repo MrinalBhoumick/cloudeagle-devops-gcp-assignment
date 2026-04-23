@@ -1,0 +1,58 @@
+# Spring Boot sync-service — set image to your Artifact Registry digest/tag (Jenkins build).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sync-service
+  namespace: sync-service
+  labels:
+    app: sync-service
+spec:
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sync-service
+  template:
+    metadata:
+      labels:
+        app: sync-service
+    spec:
+      containers:
+        - name: app
+          image: us-central1-docker.pkg.dev/PROJECT_ID/sync-service/sync-service:IMAGE_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "qa"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: sync-mongo-uri
+                  key: uri
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5

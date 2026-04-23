@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#05080f" />
+    <title>sync-service · Spring Boot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/spring-ui.css?v=1.5.4" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="bg-blobs" aria-hidden="true">
+      <span class="blob blob-a"></span>
+      <span class="blob blob-b"></span>
+      <span class="blob blob-c"></span>
+    </div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="brand">
+          <span class="brand__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <circle cx="16" cy="16" r="15" stroke="url(#g1)" stroke-width="1.2" opacity="0.5" />
+              <path
+                d="M10 20c0-3 2.5-7 6-7s6 3 6 7"
+                stroke="url(#g1)"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                fill="none"
+              />
+              <circle cx="16" cy="10" r="2.2" fill="url(#g1)" />
+              <defs>
+                <linearGradient id="g1" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#6ee7b4" />
+                  <stop offset="1" stop-color="#7c3aed" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </span>
+          <div>
+            <h1>sync-service</h1>
+            <p>Spring Boot · <span class="brand__accent">reactive</span> dashboard</p>
+          </div>
+        </div>
+        <div class="topbar__actions">
+          <div class="stat-strip" role="status" aria-label="Live metrics">
+            <div class="stat-item" title="Last /actuator/health round-trip">
+              <span class="stat-item__k">Health</span>
+              <span class="stat-item__v" id="statHealthMs">—</span>
+            </div>
+            <div class="stat-item" title="Last /api/v1/info round-trip">
+              <span class="stat-item__k">Info</span>
+              <span class="stat-item__v" id="statInfoMs">—</span>
+            </div>
+            <div class="stat-item" title="Time since page load">
+              <span class="stat-item__k">Session</span>
+              <span class="stat-item__v" id="statSession">0s</span>
+            </div>
+          </div>
+          <span class="live-pill" id="livePill">
+            <span class="live-pill__dot" aria-hidden="true"></span>
+            <span id="clockLabel">—</span>
+          </span>
+          <button type="button" class="btn-theme" id="btnTheme" title="Toggle light/dark (T)" aria-pressed="false">
+            <span class="btn-theme__moon" aria-hidden="true">◐</span>
+            <span class="visually-hidden">Theme</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap">
+      <section class="hero reveal" aria-labelledby="hero-title">
+        <p class="hero__eyebrow">Cloud-ready · Actuator · REST</p>
+        <h2 id="hero-title" class="hero__title">Ship with <span class="text-gradient">confidence</span></h2>
+        <p class="hero__lead">
+          A Spring Boot 3 service with a live, interactive control surface. Below: full in-memory
+          <strong>CRUD</strong> (create, list, update, delete) on <code class="inline-code">/api/v1/items</code>, plus
+          Actuator and service metadata — all from <em>this</em> process.
+        </p>
+        <div class="hero__chips" role="group" aria-label="Open API routes">
+          <a class="chip" href="/api/v1/items" target="_blank" rel="noopener">/api/v1/items</a>
+          <a class="chip" href="/api/v1/info" target="_blank" rel="noopener">/api/v1/info</a>
+          <a class="chip" href="/actuator/health" target="_blank" rel="noopener">/actuator/health</a>
+          <a class="chip" href="/actuator" target="_blank" rel="noopener">/actuator</a>
+        </div>
+        <p class="hero__kbd">Shortcuts: <kbd>R</kbd> health · <kbd>I</kbd> info · <kbd>T</kbd> theme · <kbd>C</kbd> copy
+          info · <kbd>L</kbd> reload items</p>
+      </section>
+
+      <section class="grid-cards" aria-label="Live service data">
+        <article class="card card--accent" data-tilt>
+          <header class="card__head">
+            <h3>Actuator</h3>
+            <div class="card__tools">
+              <button type="button" class="icon-btn" id="btnHealth" title="Refresh health (R)">↻</button>
+            </div>
+          </header>
+          <div class="status-row" id="healthStatus">
+            <span class="status-badge status-badge--load" id="healthBadge">Loading…</span>
+            <span class="status-meta" id="healthMeta"></span>
+          </div>
+          <div class="code-wrap is-loading" id="healthWrap">
+            <pre class="code-block" id="healthOut" role="status" aria-live="polite">Fetching /actuator/health …</pre>
+          </div>
+        </article>
+
+        <article class="card" data-tilt>
+          <header class="card__head">
+            <h3>Service info</h3>
+            <div class="card__tools">
+              <button type="button" class="btn-ghost" id="btnInfo" title="Refresh info (I)">Refresh</button>
+              <button type="button" class="btn-ghost" id="btnCopy" title="Copy JSON (C)">Copy</button>
+            </div>
+          </header>
+          <div class="code-wrap is-loading" id="infoWrap">
+            <pre class="code-block code-block--rich" id="infoOut" role="status" aria-live="polite">Loading /api/v1/info …</pre>
+          </div>
+        </article>
+      </section>
+
+      <section class="crud reveal" id="crud" aria-labelledby="crud-title">
+        <div class="crud__head">
+          <h2 id="crud-title" class="crud__title">Items (CRUD)</h2>
+          <p class="crud__sub">
+            <span id="itemsStorageLine"><strong>Items</strong> — storage mode: see <code class="inline-code">/api/v1/info</code> →
+            <code>items.storage</code> (mongodb or in-memory).</span>
+            <span class="crud__badge">GET POST PUT DELETE</span>
+            <code class="inline-code">/api/v1/items</code>
+          </p>
+        </div>
+
+        <div class="crud__layout">
+          <form class="crud-form" id="itemForm" autocomplete="off">
+            <h3 class="crud-form__legend" id="formLegend">Add item</h3>
+            <label class="field">
+              <span>Title <abbr title="required">*</abbr></span>
+              <input type="text" id="itemTitle" name="title" required maxlength="200" placeholder="e.g. Deploy canary" />
+            </label>
+            <label class="field">
+              <span>Description</span>
+              <textarea id="itemDesc" name="description" rows="3" maxlength="2000" placeholder="Optional details…"></textarea>
+            </label>
+            <div class="crud-form__actions">
+              <button type="submit" class="btn-primary" id="itemSubmit">Add item</button>
+            </div>
+            <p class="field-error" id="itemFormError" role="alert"></p>
+          </form>
+
+          <div class="crud-table-wrap">
+            <div class="crud-table__toolbar">
+              <span class="crud-table__count" id="itemCount">0 items</span>
+              <button type="button" class="btn-ghost btn-ghost--sm" id="btnItemsReload" title="Reload list (L)">Reload</button>
+            </div>
+            <div class="crud-table__scroll" role="region" aria-label="Item list" tabindex="0">
+              <table class="data-table" id="itemsTable">
+                <thead>
+                  <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col" class="data-table__actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsTbody">
+                  <tr class="data-table__empty">
+                    <td colspan="4">Loading…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <dialog class="edit-dialog" id="editDialog" aria-labelledby="editDialogTitle">
+        <form id="editDialogForm" class="edit-dialog__form" novalidate>
+          <h3 id="editDialogTitle">Edit item</h3>
+          <input type="hidden" id="editItemId" />
+          <label class="field">
+            <span>Title <abbr title="required">*</abbr></span>
+            <input type="text" id="editTitle" required maxlength="200" />
+          </label>
+          <label class="field">
+            <span>Description</span>
+            <textarea id="editDesc" rows="3" maxlength="2000"></textarea>
+          </label>
+          <div class="edit-dialog__actions">
+            <button type="submit" class="btn-primary" id="editSave">Save</button>
+            <button type="button" class="btn-ghost" id="editCancel">Cancel</button>
+          </div>
+        </form>
+      </dialog>
+
+      <section class="play reveal reveal--delay" aria-label="Playground">
+        <h3 class="play__title">Playground</h3>
+        <p class="play__desc">
+          Drag <strong>Mesh energy</strong> to tune the background glow. Cards tilt slightly toward your cursor. Scroll back
+          up — elements fade in with a light stagger.
+        </p>
+        <div class="play__row">
+          <label class="slider">
+            <span>Mesh energy</span>
+            <input type="range" id="meshSlider" min="0" max="100" value="40" />
+          </label>
+          <div class="metric" id="tipBox" role="status">
+            <strong>Tip</strong> — all requests are <code>fetch()</code> to the same origin, so you get a clean view of
+            real network + JVM latency.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>
+        <span id="verFoot">version —</span>
+        <span class="dot">·</span>
+        <span>profile <code id="profileFoot">—</code></span>
+      </p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>Copied</div>
+    <script src="/js/spring-ui.js?v=1.5.4" defer></script>
+  </body>
+</html>

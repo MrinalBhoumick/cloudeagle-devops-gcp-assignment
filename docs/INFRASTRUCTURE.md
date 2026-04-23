@@ -37,9 +37,12 @@ flowchart TB
   CR --> CO
   CO --> VPC
   CR -->|runtime secrets| SM
+  GKE[Optional GKE Autopilot - Spring]
   Jenkins[Jenkins / CI] -->|push image| GAR
   GAR -->|deploy| CR
+  GAR -->|kubectl apply| GKE
   CR -->|optional private path| MA
+  GKE -->|Mongo URI from Secret| MA
   CR -->|stdout / metrics| IGA
   IGA --> CM[Cloud Monitoring + Logging]
 ```
@@ -53,7 +56,7 @@ For **org-internal only** access, add **Internal HTTP(S) Load Balancer** + **Ser
 | Option | When to use | For this assignment |
 |--------|-------------|---------------------|
 | **Cloud Run** | Stateless HTTP, scale-to-zero, per-request billing | **Chosen:** fits Spring Boot behind HTTP; built-in autoscaling; minimal ops; cost-friendly at startup. |
-| **GKE (Standard / Autopilot)** | Complex networking, long-lived workers, custom CRDs, multi-tenant cluster | Use if the team standardizes on Kubernetes for all services or needs DaemonSets, etc. |
+| **GKE (Standard / Autopilot)** | Complex networking, long-lived workers, custom CRDs, multi-tenant cluster, **org standard for Spring on VMs** | **Implemented in this repo (optional):** `terraform/gke.tf` with `enable_gke` + [`k8s/`](../k8s) manifests and **HPA** for autoscaling. Spring image from [`sync-service-spring`](../sync-service-spring). |
 | **Compute Engine (MIG)** | “VMs in assignment brief,” legacy, full OS control | Higher ops; you manage OS patches and autoscaling; good if compliance mandates VMs *only*. |
 
 **Justification for Cloud Run:** The service is a **typical stateless API**; Cloud Run provides **autoscaling** (including to zero in non-prod), **HTTPS termination**, and **revisions** for rollback, while keeping the **TCO and run cost** low for a startup. If CloudEagle mandates VMs, the same Terraform can be extended with a **MIG** + **load balancer** pattern; the **network, IAM, and secrets** model stays similar.

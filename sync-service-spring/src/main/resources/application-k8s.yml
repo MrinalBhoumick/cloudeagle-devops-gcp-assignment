@@ -1,0 +1,15 @@
+# GKE — in-memory items when Mongo is excluded (no Secret required).
+# For Mongo on GKE: add Secret sync-mongo-uri (key: uri) + remove the excludes + set
+#   env MONGODB_URI from the secret (see k8s/secret-mongo.example.yaml) and use a profile
+#   that does not exclude Mongo (e.g. spring.profiles.active=k8s,cloudrun-mongo).
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+
+management:
+  health:
+    mongo:
+      enabled: false

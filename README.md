@@ -11,8 +11,10 @@ This repository is the **technical assignment** deliverable: **Part 1** (CI/CD d
 | CI/CD design (branching, Jenkins, config, deploy strategy) | [docs/CI_CD_DESIGN.md](docs/CI_CD_DESIGN.md) |
 | Jenkins pipeline | [Jenkinsfile](Jenkinsfile) |
 | Infra + architecture (Mermaid) | [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) |
-| Terraform (VPC, NAT, monitoring, GAR, Secret Manager, Cloud Run) | [terraform/](terraform/) |
-| Sample **sync-service** + **web UI** at `/` + **agentic DevOps coach** (FastAPI, Vertex AI, MongoDB or in-memory) | [app/](app/) (see `app/web/`) |
+| Terraform (VPC, NAT, optional **GKE Autopilot**, GAR, Secret Manager, Cloud Run) | [terraform/](terraform/) |
+| **Spring Boot `sync-service`** (assignment scenario: Mongo, profiles qa/staging/prod) | [sync-service-spring/](sync-service-spring/) |
+| **Kubernetes (GKE)** — Deployment, Service, HPA, secrets example | [k8s/](k8s/) |
+| **Python** sample + **web UI** at `/` + optional Gemini chat | [app/](app/) |
 | **Cloud Build** (optional image build) | [cloudbuild.yaml](cloudbuild.yaml) |
 
 ### Official brief vs this repo (coverage)

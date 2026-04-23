@@ -1,0 +1,8 @@
+# Staging — production-like, still non-prod data
+sync:
+  service:
+    version: "1.0.0-staging+${GIT_COMMIT:local}"
+
+logging:
+  level:
+    com.cloudeagle: INFO

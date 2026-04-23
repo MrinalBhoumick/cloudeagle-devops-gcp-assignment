@@ -6,20 +6,26 @@ locals {
   }
   # ALL_TRAFFIC + Cloud NAT = predictable outbound IPs (Atlas allowlist). PRIVATE_RANGES_ONLY = cheaper default.
   cloud_run_vpc_egress = var.enable_cloud_nat ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY"
+  # Optional GKE: enable Container API when var.enable_gke
+  gke_api = var.enable_gke ? ["container.googleapis.com"] : []
+  api_services = concat(
+    tolist([
+      "compute.googleapis.com",
+      "run.googleapis.com",
+      "artifactregistry.googleapis.com",
+      "secretmanager.googleapis.com",
+      "vpcaccess.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
+      "cloudbuild.googleapis.com",
+      "aiplatform.googleapis.com",
+    ]),
+    local.gke_api
+  )
 }
 
 resource "google_project_service" "apis" {
-  for_each = toset([
-    "compute.googleapis.com",
-    "run.googleapis.com",
-    "artifactregistry.googleapis.com",
-    "secretmanager.googleapis.com",
-    "vpcaccess.googleapis.com",
-    "logging.googleapis.com",
-    "monitoring.googleapis.com",
-    "cloudbuild.googleapis.com",
-    "aiplatform.googleapis.com",
-  ])
+  for_each           = toset(local.api_services)
   project            = var.project_id
   service            = each.value
   disable_on_destroy = false

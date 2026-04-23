@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sync-service-spring
+  namespace: sync-service
+  labels:
+    app: sync-service-spring
+spec:
+  type: LoadBalancer
+  selector:
+    app: sync-service-spring
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

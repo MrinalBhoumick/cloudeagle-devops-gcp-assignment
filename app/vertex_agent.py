@@ -40,6 +40,7 @@ _VERTEX_MODEL_CANDIDATES: list[str] = [
     "gemini-1.5-pro",
 ]
 
+# Static fallback (after list_models). Do not use gemini-1.0-pro / bare gemini-pro — often 404 on v1beta.
 _GEMINI_API_MODELS: list[str] = [
     "gemini-2.0-flash",
     "gemini-2.0-flash-001",
@@ -48,9 +49,16 @@ _GEMINI_API_MODELS: list[str] = [
     "gemini-1.5-flash-002",
     "gemini-1.5-pro",
     "gemini-1.5-pro-latest",
-    "gemini-pro",
-    "gemini-1.0-pro",
 ]
+
+
+def _is_retired_gmn_model(name: str) -> bool:
+    n = (name or "").lower()
+    if "1.0" in n and "pro" in n:
+        return True
+    if n in ("gemini-pro", "models/gemini-pro"):
+        return True
+    return "embedding" in n or "aqa" in n
 
 # Filled on first `list_models()` call (per process); avoids hard‑coding names that 404 for some keys.
 _GEMINI_LIST_CACHE: list[str] | None = None
@@ -147,7 +155,9 @@ def _discover_api_model_names() -> list[str]:
             n = m.name or ""
             if n.startswith("models/"):
                 n = n[7:]
-            if n and n not in names:
+            if not n or _is_retired_gmn_model(n):
+                continue
+            if n not in names:
                 names.append(n)
         flash = [x for x in names if "flash" in x.lower()]
         pro = [x for x in names if "pro" in x.lower() and x not in flash]
@@ -167,7 +177,7 @@ def _ordered_gemini_models() -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
     for m in _discover_api_model_names() + _GEMINI_API_MODELS:
-        if m and m not in seen:
+        if m and m not in seen and not _is_retired_gmn_model(m):
             seen.add(m)
             out.append(m)
     return out

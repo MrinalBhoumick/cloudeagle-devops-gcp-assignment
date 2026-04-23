@@ -7,9 +7,13 @@ tfplan
 *.secrets.tfvars
 terraform/terraform.tfvars
 .env
+k8s/secret-mongo.yaml
 crash.log
 override.tf
 override.tf.json
+
+# Java / Maven
+sync-service-spring/target/
 
 # OS / IDE
 Thumbs.db

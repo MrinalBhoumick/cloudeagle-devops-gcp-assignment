@@ -1,0 +1,9 @@
+# Production
+sync:
+  service:
+    version: "1.0.0"
+
+logging:
+  level:
+    com.cloudeagle: WARN
+    org.springframework: WARN

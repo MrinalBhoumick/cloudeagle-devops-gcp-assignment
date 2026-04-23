@@ -10,6 +10,8 @@
   const envPill = document.getElementById("pill-env");
   const vertexPill = document.getElementById("pill-vertex");
   const sessionPill = document.getElementById("pill-session");
+  const verPill = document.getElementById("pill-version");
+  const footerVer = document.getElementById("footer-version");
 
   let sessionId = null;
   let typingEl = null;
@@ -80,16 +82,24 @@
     }
   }
 
+  function setVersionLabel(summary) {
+    const v = (summary && summary.version) || "";
+    if (verPill) verPill.textContent = v ? "v" + v : "—";
+    if (footerVer) footerVer.textContent = v ? "v " + v : "v —";
+  }
+
   async function loadMeta() {
     try {
-      const [info, meta] = await Promise.all([
+      const [info, meta, summary] = await Promise.all([
         fetch("/api/v1/info").then((r) => r.json()),
         fetch("/api/v1/agent/meta").then((r) => r.json()),
+        fetch("/api/v1/summary").then((r) => r.json()).catch(() => ({})),
       ]);
       if (envPill) {
         const el = envPill.querySelector("strong");
         if (el) el.textContent = info.environment || "—";
       }
+      setVersionLabel({ version: (summary && summary.version) || info.version || "" });
       setLlmPill(meta);
     } catch (e) {
       console.error(e);
@@ -173,7 +183,7 @@
   log.innerHTML = "";
   addBubble(
     "assistant",
-    "Hi — ask me anything. API links are in the footer. If replies fail, the host may need a Gemini API key (Cloud Run → Variables).",
+    "Hi. Ask a question below — the UI is v0.6 (chat-first). If you still see an old look, hard-refresh the page (Ctrl+Shift+R) once.",
     "Assistant"
   );
 

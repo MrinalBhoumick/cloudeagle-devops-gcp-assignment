@@ -1,0 +1,12 @@
+# In-memory items on Cloud Run when you do not use Atlas (default `cloudrun` profile group).
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+
+management:
+  health:
+    mongo:
+      enabled: false

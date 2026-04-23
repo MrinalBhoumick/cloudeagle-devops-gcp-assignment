@@ -2,7 +2,8 @@
 
 ## Context
 
-- **Service:** Spring Boot `sync-service`, connects to MongoDB, containerized, deployed on GCP.  
+- **Service:** Spring Boot `sync-service`, connects to MongoDB, containerized, deployed on **GCP (GKE and/or Cloud Run / VMs, depending on org)**.  
+- **Code in this repo:** [`sync-service-spring`](../sync-service-spring) is the **Spring Boot** implementation (Maven, Docker). The [`app/`](../app) folder is a **Python/FastAPI** reference for the same HTTP patterns (`/actuator/health`, optional agent). **Jenkins** builds whichever module provides `Dockerfile` (Spring takes precedence if `sync-service-spring/pom.xml` exists) — see [`Jenkinsfile`](../Jenkinsfile).  
 - **Environments:** `qa`, `staging`, `prod`.  
 - **Build system:** Jenkins.  
 
@@ -67,10 +68,16 @@ A reference implementation is in the repository root: [`Jenkinsfile`](../Jenkins
 ### Rollback if deployment fails
 
 1. **Health check after deploy:** if `/actuator/health` fails N times, mark deploy failed.  
-2. **Cloud Run revision rollback:** re-point traffic to the **previous ready revision** (kept because traffic is never 100% cut until the new revision is healthy, or you maintain last-known-good revision).  
-3. **Artifact Registry:** previous image digest is still available — redeploy that digest with Terraform or `gcloud run services update` / Jenkins “rollback” job.  
+2. **Cloud Run revision rollback** (if using Cloud Run): re-point traffic to the **previous ready revision** (or **GKE** `kubectl rollout undo deployment/sync-service` — see [`k8s/README.md`](../k8s/README.md)).  
+3. **Artifact Registry:** previous image digest is still available — redeploy that digest with Terraform or `gcloud run services update` / `kubectl set image` / Jenkins “rollback” job.  
 4. **Terraform:** if infra is versioned, pin **image digest** in `terraform.tfvars` and `terraform apply` the previous value (or use a `rollback` job that sets the last good variable).  
-5. **Database:** MongoDB schema migrations are **forward-compatible** and tested in staging; avoid destructive changes without a separate migration plan.
+5. **Database:** MongoDB schema migrations are **forward-compatible** and tested in staging; avoid destructive changes without a separate migration plan.  
+
+### GKE deploy (optional, same workload as on **VM-backed** or **GKE** patterns)
+
+- **K8s manifests** live under [`k8s/`](../k8s): `Deployment` (rolling update), `Service`, `HPA`, `Namespace`.  
+- **Jenkins (optional GKE stage):** after `docker push`, run `gcloud container clusters get-credentials` (or a dedicated GKE service account) and `kubectl set image` / `kubectl apply -f k8s/` for the target namespace — often gated the same way as Cloud Run (branch → `qa` / `release/*` / `main` with approval for prod).  
+- **IaC:** optional GKE **Autopilot** in [`terraform/gke.tf`](../terraform/gke.tf) with `enable_gke = true` (extra cost; useful for a full GKE + Spring demo).
 
 ---
 
